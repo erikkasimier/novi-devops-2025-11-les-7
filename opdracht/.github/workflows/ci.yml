@@ -1,0 +1,65 @@
+# ===========================================
+# SUBOPTIMALE PIPELINE - Dit moet je verbeteren!
+# ===========================================
+# Deze pipeline heeft meerdere problemen:
+# 1. Geen caching - dependencies worden elke keer gedownload
+# 2. Sequentieel - jobs wachten onnodig op elkaar
+# 3. Geen security checks
+# 4. Deployt altijd, ook bij PRs
+# 5. Dubbel werk - checkout en install in elke job
+# ===========================================
+
+name: Suboptimal Pipeline
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run linting
+        run: npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build application
+        run: npm run build
+
+      - name: Build Docker image
+        run: docker build -t myapp:latest .
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to production
+        run: |
+          echo "Deploying to production..."
+          echo "This runs on EVERY push, even PRs!"
